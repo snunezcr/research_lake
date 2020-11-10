@@ -8,6 +8,10 @@ defmodule RLUtils.Quantities.KnownOrdMags do
   alias RLUtils.Quantities.OrdMagnitude
   alias RLUtils.Quantities.UnknownOrdMagError
 
+  defp largest() do
+    24
+  end
+
   defp yotta() do
     %OrdMagnitude{ symbol: :Y, name: "Yotta", factor: 1.0e24, exponent: 24}
   end
@@ -38,6 +42,10 @@ defmodule RLUtils.Quantities.KnownOrdMags do
 
   defp kilo() do
     %OrdMagnitude{ symbol: :k, name: "kilo", factor: 1.0e3, exponent: 3}
+  end
+
+  defp id() do
+    %OrdMagnitude{ symbol: :id, name: "", factor: 1.0e0, exponent: 0}
   end
 
   defp centi() do
@@ -73,15 +81,40 @@ defmodule RLUtils.Quantities.KnownOrdMags do
   end
 
   defp yocto() do
-    %OrdMagnitude{ symbol: :z, name: "yocto", factor: 1.0e-24, exponent: -24}
+    %OrdMagnitude{ symbol: :y, name: "yocto", factor: 1.0e-24, exponent: -24}
   end
 
-  defp id() do
-    %OrdMagnitude{ symbol: :id, name: "", factor: 1.0e0, exponent: 0}
+  defp smallest() do
+    -24
   end
 
   defp omlist() do
     [:Y, :Z, :E, :P, :T, :G, :M, :k, :h, :da, :id, :d, :c, :m, :u, :n, :p, :f, :a, :z, :y]
+  end
+
+  @spec fit(integer()) :: OrdMagnitude.t()
+  defp fit(exponent) do
+    case exponent do
+      24 -> yotta()
+      21 -> zetta()
+      18 -> exa()
+      15 -> peta()
+      12 -> tera()
+      9 -> giga()
+      6 -> mega()
+      3 -> kilo()
+      0 -> id()
+      -2 -> centi()
+      -3 -> milli()
+      -6 -> micro()
+      -9 -> nano()
+      -12 -> pico()
+      -15 -> femto()
+      -18 -> atto()
+      -21 -> zepto()
+      -24 -> yocto()
+      _ -> raise UnknownOrdMagError, "Unknown order of magnitude value encountered: #{inspect(exponent)}"
+    end
   end
 
   @doc """
@@ -120,8 +153,18 @@ defmodule RLUtils.Quantities.KnownOrdMags do
   * `:symbol`: the symbol that specifies the order of magnitude
   """
   @spec exists?(atom()) :: boolean()
-  def exist?(symbol) do
+  def exists?(symbol) do
     symbol in omlist()
+  end
+
+  @doc """
+  Provide the colloquial name for a given symbol
+
+  * `:symbol`: the symbol that specifies the order of magnitude
+  """
+  def name(symbol) do
+    %OrdMagnitude{name: nm} = omag(symbol)
+    nm
   end
 
   @doc """
@@ -132,11 +175,11 @@ defmodule RLUtils.Quantities.KnownOrdMags do
   """
   @spec convert(atom(), atom()) :: { float(), atom()}
   def convert(ssymbol, tsymbol) do
-    unless exist?(ssymbol) do
+    unless exists?(ssymbol) do
       raise UnknownOrdMagError, "Unknown order of magnitude encountered in source: #{inspect(tsymbol)}"
     end
 
-    unless exist?(tsymbol) do
+    unless exists?(tsymbol) do
       raise UnknownOrdMagError, "Unknown order of magnitude encountered in target: #{inspect(tsymbol)}"
     end
 
@@ -145,10 +188,37 @@ defmodule RLUtils.Quantities.KnownOrdMags do
     { source.factor/target.factor, tsymbol }
   end
 
-  @spec normalize(:atom, float()) :: { float(), atom()}
-  def normalize(symbol, factor) do
-    ofm = floor(:math.log10(factor))
-    target = omag(symbol)
+  @doc """
+  Represents a quantity depending on its nominal value
+
+  * `:value`: a real value to represent in the system
+  """
+  @spec represent(float()) :: { float(), atom() }
+  def represent(value) do
+    exponent = floor(:math.log10(value))
+
+    exp = cond do
+        exponent > largest() -> largest()
+        exponent < smallest() -> smallest()
+        true -> exponent
+    end
+
+    extra = rem(exp, 3)
+    base = exp - extra
+    %OrdMagnitude{symbol: s} = fit(base)
+    rebased = (value/:math.pow(10, base))
+
+    {rebased, s}
   end
 
+  @doc """
+  Normalize an order of magnitude with respect to a value
+
+  * `:value`: a real value to represent in the system
+  * `:symbol`: the symbol that specifies the order of magnitude
+  """
+  @spec normalize(atom(), float()) :: { float(), atom()}
+  def normalize(symbol, value) do
+    represent(:math.pow(10, omag(symbol).exponent) * value)
+  end
 end
