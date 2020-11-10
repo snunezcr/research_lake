@@ -2,7 +2,7 @@ defmodule RLUtils.Quantities.Constant do
   @moduledoc """
   The definition of a constant in SI units.
   """
-  alias RLUtils.Quantities.BasicUnit
+  alias RLUtils.Quantities.BaseUnit
   alias RLUtils.Quantities.DerivedUnit
 
   @typedoc """
@@ -22,7 +22,7 @@ defmodule RLUtils.Quantities.Constant do
   * `:exact_value`: the experimentally observed value of the constant
   """
   @type t :: %__MODULE__{
-                          symbol: unit(),
+                          units: unit(),
                           name: String.t(),
                           exact_value: float()
                         }
