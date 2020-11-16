@@ -1,4 +1,4 @@
-defmodule RLUtils.Quantities.KnownOrdMags do
+defmodule RLUtils.Quantities.OrdMagHandler do
   @moduledoc """
   A collection of known orders of magnitude including their multipliers.
 
@@ -221,4 +221,15 @@ defmodule RLUtils.Quantities.KnownOrdMags do
   def normalize(symbol, value) do
     represent(:math.pow(10, omag(symbol).exponent) * value)
   end
+
+
+  @doc """
+  Represent the current symbol
+
+  * `:symbol`: the symbol that specifies the order of magnitude
+  """
+  def symb(symbol) do
+    to_string(symbol)
+  end
+
 end

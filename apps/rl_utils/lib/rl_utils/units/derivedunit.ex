@@ -1,4 +1,4 @@
-defmodule RLUtils.Quantities.DerivedUnit do
+defmodule RLUtils.Quantities.Units.DerivedUnit do
   @moduledoc """
   A module that represents derived units in the International Systems of Units.
   """
